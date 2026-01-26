@@ -1,0 +1,243 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  background: #f4f5f7;
+}
+
+.app {
+  display: flex;
+  height: 100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 260px;
+  background: #2f3542;
+  color: #fff;
+  padding: 20px;
+}
+
+.sidebar h3 {
+  font-size: 14px;
+  margin-bottom: 15px;
+  opacity: 0.8;
+}
+.sidebar label {
+  font-size: 12px;
+  margin-top: 15px;
+  display: block;
+  opacity: 0.7;
+}
+.sidebar input,
+.sidebar select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  background: #3a3f4b;
+  border: none;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.sidebar-buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+.sidebar-buttons button {
+  flex: 1;
+    padding: 8px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.clear {
+  background: #57606f;
+  color: #fff;
+}
+.apply {
+  background: #ff4757;
+  color: #fff;
+}
+
+/* MAIN */
+.main {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TOP NAV */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+}
+.top-nav ul {
+  display: flex;
+  list-style: none;
+  gap: 25px;
+}
+.top-nav li {
+  cursor: pointer;
+  color: #888;
+  font-size: 16px;
+}
+.top-nav .active {
+  color: #000;
+  font-weight: bold;
+  border-bottom: 2px solid #ff4757;
+  padding-bottom: 14px;
+}
+
+.user {
+  position: relative;
+  font-size: 14px;
+  cursor: pointer;
+}
+.notification {
+  position: absolute;
+  top: -8px;
+  left: -10px;
+  background: #ff4757;
+  color: #fff;
+  font-size: 10px;
+  border-radius: 50%;
+  padding: 2px 6px;
+}
+
+/* ACTIONS - ESTILIZAÇÃO DOS BOTÕES DE CIMA */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.btn-action {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #2f3542;
+  transition: 0.2s;
+}
+
+.btn-action:hover {
+  background: #f1f2f6;
+}
+
+.actions .primary {
+  background: #ff4757;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* TABLE */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+thead {
+  background: #f1f2f6;
+}
+th,
+td {
+  padding: 15px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid #eee;
+}
+
+/* PAGINATION - ESTILIZAÇÃO DOS BOTÕES DE BAIXO */
+.pagination {
+  padding-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-pag {
+  padding: 8px 14px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+.btn-pag:hover {
+  background: #f1f2f6;
+}
+
+.btn-pag.active {
+  background: #ff4757;
+  color: #fff;
+  border-color: #ff4757;
+  font-weight: bold;
+}
+
+/* MODAL */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background: #fff;
+  padding: 25px;
+  border-radius: 8px;
+  width: 350px;
+}
+.form-group label {
+  display: block;
+  font-size: 12px;
+  margin-top: 10px;
+  color: #57606f;
+}
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.modal-buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+.modal-buttons button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}

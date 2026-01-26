@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de estoque</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <h3>FILTRAR PRODUTOS</h3>
+        <input type="text" placeholder="Pesquisar por nome" />
+        <label>Tags</label>
+        <input type="text" placeholder="Filtrar por tag" />
+        <label>SKU</label>
+        <input type="text" placeholder="Filtrar por SKU" />
+        <label>Condições</label>
+        <select>
+          <option>Todas as condições</option>
+        </select>
+        <label>Categoria</label>
+        <select>
+          <option>Todas as categorias</option>
+        </select>
+        <label>Localização</label>
+        <select>
+          <option>Todas as localizações</option>
+        </select>
+        <div class="sidebar-buttons">
+          <button class="clear">Limpar filtros</button>
+          <button class="apply">Aplicar filtros</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <nav class="top-nav">
+          <ul>
+            <li>Painel</li>
+            <li class="active">Produtos</li>
+            <li>Armazém</li>
+            <li>Pedidos</li>
+            <li>Relatório</li>
+          </ul>
+          <div class="user">
+            <span class="notification">2</span>
+            <span>Usuário ▾</span>
+          </div>
+        </nav>
+
+        <div class="actions">
+          <div>
+            <select id="selectArmazem" class="btn-action">
+              <option value="">Mudar Armazém...</option>
+              <option value="Armazém 1">Armazém 1</option>
+              <option value="Armazém 2">Armazém 2</option>
+              <option value="Armazém 3">Armazém 3</option>
+            </select>
+            <button id="btnEditar" class="btn-action">Editar</button> <button id="btnDeletar" class="btn-action">Deletar</button>
+          </div>
+
+          <div>
+            <button class="btn-action">Exportar</button>
+            <button class="btn-action">Importar do CSV</button>
+            <button class="primary" id="btnAbrirModal">
+              + Adicionar produto
+            </button>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="checkTodos" /></th>
+              <th>NOME</th>
+              <th>SKU</th>
+              <th>CONDIÇÃO</th>
+              <th>LOCALIZAÇÃO</th>
+              <th>DISPONÍVEL</th>
+              <th>RESERVADO</th>
+              <th>À MÃO</th> <th>PREÇO</th>
+              <th>MODIFICADO</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaProdutos"></tbody>
+        </table>
+
+        <div class="pagination">
+          <button class="btn-pag">Primeira</button>
+          <button class="btn-pag">Anterior</button>
+          <button class="btn-pag active">1</button>
+          <button class="btn-pag">Próxima</button>
+        </div>
+      </main>
+    </div>
+
+    <div id="modalProduto" class="modal-overlay">
+      <div class="modal-content">
+        <h3 id="modalTitulo">Cadastrar Novo Produto</h3>
+        <div class="form-group">
+          <label>Nome do Produto</label>
+          <input type="text" id="iptNome" placeholder="Ex: Câmera IP" />
+          <label>SKU</label>
+          <input type="text" id="iptSku" placeholder="Ex: 001" />
+          <label>Condição</label>
+          <input type="text" id="iptCond" placeholder="Ex: new" />
+          <label>Localização Inicial</label>
+          <input type="text" id="iptLocal" placeholder="Ex: Armazém 1" />
+          <label>Quantidade Disponível</label>
+          <input type="number" id="iptQuant" placeholder="Ex: 50" />
+          <label>Quantidade Reservada</label>
+          <input type="number" id="iptQuantReservada" placeholder="Ex: 10" />
+          <label>Preço</label>
+          <input type="text" id="iptPreco" placeholder="Ex: 150.00" />
+        </div>
+        <div class="modal-buttons">
+          <button class="clear" id="btnCancelar">Cancelar</button>
+          <button class="apply" id="btnSalvar">Salvar Produto</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
