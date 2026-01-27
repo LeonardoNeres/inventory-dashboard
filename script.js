@@ -1,251 +1,301 @@
-// Seleção de elementos
-const modal = document.getElementById("modalProduto");
-const modalTitulo = document.getElementById("modalTitulo");
-const btnAbrir = document.getElementById("btnAbrirModal");
-const btnCancelar = document.getElementById("btnCancelar");
-const btnSalvar = document.getElementById("btnSalvar");
-const btnDeletar = document.getElementById("btnDeletar");
-const btnEditar = document.getElementById("btnEditar");
-const btnExportar = document.getElementById("btnExportar");
-const btnImportar = document.getElementById("btnImportar");
-const iptFileImport = document.getElementById("iptFileImport");
-const selectArmazem = document.getElementById("selectArmazem");
+let produtos = [];
+let paginaAtual = 1;
+let itensPorPagina = 5;
+let linhaEditandoId = null;
+
 const tabelaBody = document.getElementById("tabelaProdutos");
-const checkTodos = document.getElementById("checkTodos");
+const infoPagina = document.getElementById("infoPagina");
+const selectItensPorPagina = document.getElementById("selectItensPorPagina");
+const modal = document.getElementById("modalProduto");
+const modalExport = document.getElementById("modalExportar");
+const fileInput = document.getElementById("iptFileImport");
 
-const iptNome = document.getElementById("iptNome");
-const iptSku = document.getElementById("iptSku");
-const iptCond = document.getElementById("iptCond");
-const iptLocal = document.getElementById("iptLocal");
-const iptQuant = document.getElementById("iptQuant");
-const iptQuantReservada = document.getElementById("iptQuantReservada");
-const iptPreco = document.getElementById("iptPreco");
+// --- RENDERIZAÇÃO ---
+function renderizarTabela() {
+  tabelaBody.innerHTML = "";
+  const inicio = (paginaAtual - 1) * itensPorPagina;
+  const fim = inicio + itensPorPagina;
+  const itensVisiveis = produtos.slice(inicio, fim);
 
-// Modais Customizados
-const modalAviso = document.getElementById("modalAviso");
-const avisoMsg = document.getElementById("avisoMsg");
-const btnFecharAviso = document.getElementById("btnFecharAviso");
-const modalConfirm = document.getElementById("modalConfirmacao");
-const confirmMsg = document.getElementById("confirmMsg");
-const btnAceitarConfirm = document.getElementById("btnAceitarConfirm");
-const btnCancelarConfirm = document.getElementById("btnCancelarConfirm");
-
-let linhaEditando = null;
-let acaoConfirmar = null;
-
-// --- FUNÇÕES DE MODAL ---
-function exibirAviso(texto) {
-  avisoMsg.innerText = texto;
-  modalAviso.style.display = "flex";
-}
-
-function exibirConfirmacao(texto, callback) {
-  confirmMsg.innerText = texto;
-  acaoConfirmar = callback;
-  modalConfirm.style.display = "flex";
-}
-
-btnFecharAviso.addEventListener(
-  "click",
-  () => (modalAviso.style.display = "none"),
-);
-btnCancelarConfirm.addEventListener(
-  "click",
-  () => (modalConfirm.style.display = "none"),
-);
-btnAceitarConfirm.addEventListener("click", () => {
-  if (acaoConfirmar) acaoConfirmar();
-  modalConfirm.style.display = "none";
-});
-
-// --- LOGICA DE PRODUTOS ---
-btnAbrir.addEventListener("click", () => {
-  linhaEditando = null;
-  modalTitulo.innerText = "Cadastrar Novo Produto";
-  fecharELimpar();
-  modal.style.display = "flex";
-});
-
-btnCancelar.addEventListener("click", fecharELimpar);
-
-btnSalvar.addEventListener("click", () => {
-  if (iptNome.value === "" || iptSku.value === "") {
-    exibirAviso("Preencha Nome e SKU!");
-    return;
-  }
-  const quant = parseInt(iptQuant.value) || 0;
-  const reserv = parseInt(iptQuantReservada.value) || 0;
-
-  if (linhaEditando) {
-    linhaEditando.cells[1].innerText = iptNome.value;
-    linhaEditando.cells[2].innerText = iptSku.value;
-    linhaEditando.cells[3].innerText = iptCond.value;
-    linhaEditando.cells[4].innerText = iptLocal.value || "Armazém 1";
-    linhaEditando.cells[5].innerText = quant;
-    linhaEditando.cells[6].innerText = reserv;
-    linhaEditando.cells[7].innerText = `R$ ${iptPreco.value || "0.00"}`;
-  } else {
-    adicionarLinhaTabela(
-      iptNome.value,
-      iptSku.value,
-      iptCond.value,
-      iptLocal.value,
-      quant,
-      reserv,
-      iptPreco.value,
-    );
-  }
-  fecharELimpar();
-});
-
-function adicionarLinhaTabela(nome, sku, cond, local, q, r, preco) {
-  const tr = document.createElement("tr");
-  tr.innerHTML = `
-      <td><input type="checkbox" class="checkItem"></td>
-      <td>${nome}</td>
-      <td>${sku}</td>
-      <td>${cond}</td>
-      <td class="col-local">${local || "Armazém 1"}</td>
-      <td>${q}</td>
-      <td>${r}</td>
-      <td>R$ ${preco || "0.00"}</td>
-      <td>${new Date().toLocaleDateString("pt-BR")}</td>
-  `;
-  tabelaBody.appendChild(tr);
-}
-
-// --- IMPORTAR E EXPORTAR (USANDO ESPAÇOS) ---
-
-// EXPORTAR: Transforma tabela em texto separado por espaços
-btnExportar.addEventListener("click", () => {
-  const linhas = tabelaBody.querySelectorAll("tr");
-  if (linhas.length === 0) {
-    exibirAviso("Não há dados para exportar.");
-    return;
-  }
-
-  let conteudoTxt =
-    "NOME SKU CONDIÇÃO LOCALIZAÇÃO DISPONÍVEL RESERVADO PREÇO\n";
-
-  linhas.forEach((linha) => {
-    const dados = [];
-    // Pega do índice 1 ao 7 (pula checkbox e data modificação)
-    for (let i = 1; i <= 7; i++) {
-      // Substitui espaços internos no nome por "_" para não quebrar a lógica na volta
-      let texto = linha.cells[i].innerText.replace(/\s+/g, "_");
-      dados.push(texto);
-    }
-    conteudoTxt += dados.join("   ") + "\n"; // Usa 3 espaços como separador
+  itensVisiveis.forEach((p) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input type="checkbox" class="checkItem" data-id="${p.id}"></td>
+      <td>${p.nome}</td>
+      <td>${p.sku}</td>
+      <td>${p.cond}</td>
+      <td class="col-local">${p.local}</td>
+      <td>${p.quant}</td>
+      <td>${p.reserv}</td>
+      <td>R$ ${p.preco}</td>
+      <td>${p.data}</td>
+    `;
+    tabelaBody.appendChild(tr);
   });
 
-  const blob = new Blob([conteudoTxt], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "estoque.txt";
-  link.click();
-});
+  const totalPaginas = Math.ceil(produtos.length / itensPorPagina) || 1;
+  infoPagina.innerText = `Página ${paginaAtual} de ${totalPaginas}`;
 
-// IMPORTAR: Lê arquivo e quebra por espaços
-btnImportar.addEventListener("click", () => iptFileImport.click());
+  if (document.getElementById("btnAnterior"))
+    document.getElementById("btnAnterior").disabled = paginaAtual === 1;
+  if (document.getElementById("btnProxima"))
+    document.getElementById("btnProxima").disabled =
+      paginaAtual === totalPaginas;
 
-iptFileImport.addEventListener("change", (e) => {
+  document.getElementById("checkTodos").checked = false;
+}
+
+// --- LÓGICA: MUDAR ARMAZÉM EM MASSA ---
+document.getElementById("selectArmazem").onchange = (e) => {
+  const novoLocal = e.target.value;
+  if (!novoLocal) return;
+
+  const selecionados = Array.from(
+    document.querySelectorAll(".checkItem:checked"),
+  ).map((cb) => Number(cb.dataset.id));
+
+  if (selecionados.length === 0) {
+    exibirAviso("Selecione os produtos que deseja mover de armazém.");
+    e.target.value = "";
+    return;
+  }
+
+  exibirConfirmacao(
+    `Deseja mover ${selecionados.length} item(ns) para o ${novoLocal}?`,
+    () => {
+      produtos = produtos.map((p) => {
+        if (selecionados.includes(p.id)) {
+          return {
+            ...p,
+            local: novoLocal,
+            data: new Date().toLocaleDateString("pt-BR"),
+          };
+        }
+        return p;
+      });
+
+      renderizarTabela();
+      e.target.value = "";
+    },
+  );
+};
+
+// --- IMPORTAÇÃO ---
+document.getElementById("btnImportar").onclick = () => fileInput.click();
+
+fileInput.onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
   reader.onload = (event) => {
-    const texto = event.target.result;
-    const linhas = texto.split("\n");
+    const conteudo = event.target.result;
+    const linhas = conteudo.split(/\r?\n/);
 
-    // Começa do 1 para pular o cabeçalho
-    for (let i = 1; i < linhas.length; i++) {
-      if (linhas[i].trim() === "") continue;
+    linhas.slice(1).forEach((linha, i) => {
+      if (linha.trim() === "") return;
+      let col = linha.split("\t");
+      if (col.length < 3) col = linha.split(/\s{2,}/);
 
-      // Quebra a linha por múltiplos espaços
-      const colunas = linhas[i].split(/\s{2,}/);
-
-      if (colunas.length >= 6) {
-        // Recupera os espaços originais (onde tinha _) e remove o "R$"
-        const nome = colunas[0].replace(/_/g, " ");
-        const sku = colunas[1];
-        const cond = colunas[2];
-        const local = colunas[3].replace(/_/g, " ");
-        const quant = colunas[4];
-        const reserv = colunas[5];
-        const preco = colunas[6] ? colunas[6].replace("R$", "").trim() : "0.00";
-
-        adicionarLinhaTabela(nome, sku, cond, local, quant, reserv, preco);
+      if (col.length >= 3) {
+        produtos.push({
+          id: Date.now() + i,
+          nome: col[0].replace(/_/g, " ").trim(),
+          sku: col[1].trim(),
+          cond: col[2] || "Novo",
+          local: col[3] ? col[3].replace(/_/g, " ").trim() : "Armazém 1",
+          quant: col[4] || 0,
+          reserv: col[5] || 0,
+          preco: col[6] ? col[6].replace("R$", "").trim() : "0.00",
+          data: new Date().toLocaleDateString("pt-BR"),
+        });
       }
-    }
-    exibirAviso("Dados importados com sucesso!");
-    iptFileImport.value = ""; // Limpa o input
+    });
+
+    paginaAtual = 1;
+    renderizarTabela();
+    fileInput.value = "";
   };
   reader.readAsText(file);
-});
+};
 
-// --- OUTRAS FUNÇÕES (EDITAR, DELETAR, ETC) ---
+// --- PAGINAÇÃO ---
+document.getElementById("btnProxima").onclick = () => {
+  const totalPaginas = Math.ceil(produtos.length / itensPorPagina);
+  if (paginaAtual < totalPaginas) {
+    paginaAtual++;
+    renderizarTabela();
+  }
+};
 
-btnEditar.addEventListener("click", () => {
+document.getElementById("btnAnterior").onclick = () => {
+  if (paginaAtual > 1) {
+    paginaAtual--;
+    renderizarTabela();
+  }
+};
+
+document.getElementById("btnPrimeira").onclick = () => {
+  paginaAtual = 1;
+  renderizarTabela();
+};
+
+selectItensPorPagina.onchange = () => {
+  itensPorPagina = parseInt(selectItensPorPagina.value);
+  paginaAtual = 1;
+  renderizarTabela();
+};
+
+// --- LOGICA DE EXPORTAÇÃO ---
+document.getElementById("btnExportar").onclick = () => {
   const selecionados = document.querySelectorAll(".checkItem:checked");
-  if (selecionados.length !== 1) {
-    exibirAviso("Selecione exatamente um produto para editar.");
-    return;
-  }
-  linhaEditando = selecionados[0].closest("tr");
-  iptNome.value = linhaEditando.cells[1].innerText;
-  iptSku.value = linhaEditando.cells[2].innerText;
-  iptCond.value = linhaEditando.cells[3].innerText;
-  iptLocal.value = linhaEditando.cells[4].innerText;
-  iptQuant.value = linhaEditando.cells[5].innerText;
-  iptQuantReservada.value = linhaEditando.cells[6].innerText;
-  iptPreco.value = linhaEditando.cells[7].innerText.replace("R$ ", "");
+  if (selecionados.length === 0)
+    return exibirAviso("Selecione pelo menos um item para exportar.");
 
-  modalTitulo.innerText = "Editar Produto";
+  modalExport.style.display = "flex";
+  document.getElementById("iptNomeArquivo").value = "meu_estoque";
+};
+
+document.getElementById("btnConfirmarExport").onclick = () => {
+  const selecionadosIds = Array.from(
+    document.querySelectorAll(".checkItem:checked"),
+  ).map((cb) => Number(cb.dataset.id));
+  const nomeArquivo =
+    document.getElementById("iptNomeArquivo").value || "estoque";
+  const produtosParaExportar = produtos.filter((p) =>
+    selecionadosIds.includes(p.id),
+  );
+
+  let txt = "NOME\tSKU\tCONDIÇÃO\tLOCALIZAÇÃO\tDISPONÍVEL\tRESERVADO\tPREÇO\n";
+  produtosParaExportar.forEach((p) => {
+    txt += `${p.nome}\t${p.sku}\t${p.cond}\t${p.local}\t${p.quant}\t${p.reserv}\t${p.preco}\n`;
+  });
+
+  const blob = new Blob([txt], { type: "text/plain" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${nomeArquivo}.txt`;
+  a.click();
+
+  modalExport.style.display = "none";
+};
+
+document.getElementById("btnCancelarExport").onclick = () =>
+  (modalExport.style.display = "none");
+
+// --- CRUD ---
+document.getElementById("btnSalvar").onclick = () => {
+  const nome = document.getElementById("iptNome").value;
+  const sku = document.getElementById("iptSku").value;
+  if (!nome || !sku) return exibirAviso("Nome e SKU são obrigatórios!");
+
+  const pData = {
+    id: linhaEditandoId || Date.now(),
+    nome,
+    sku,
+    cond: document.getElementById("iptCond").value,
+    local: document.getElementById("iptLocal").value || "Armazém 1",
+    quant: document.getElementById("iptQuant").value || 0,
+    reserv: document.getElementById("iptQuantReservada").value || 0,
+    preco: document.getElementById("iptPreco").value || "0.00",
+    data: new Date().toLocaleDateString("pt-BR"),
+  };
+
+  if (linhaEditandoId) {
+    const index = produtos.findIndex((p) => p.id === linhaEditandoId);
+    produtos[index] = pData;
+  } else {
+    produtos.push(pData);
+  }
+  fecharELimpar();
+  renderizarTabela();
+};
+
+document.getElementById("btnDeletar").onclick = () => {
+  const selecionados = Array.from(
+    document.querySelectorAll(".checkItem:checked"),
+  ).map((cb) => Number(cb.dataset.id));
+  if (selecionados.length === 0)
+    return exibirAviso("Selecione itens para deletar.");
+
+  exibirConfirmacao(
+    `Deseja realmente deletar ${selecionados.length} item(ns)?`,
+    () => {
+      produtos = produtos.filter((p) => !selecionados.includes(p.id));
+      if (
+        paginaAtual > Math.ceil(produtos.length / itensPorPagina) &&
+        paginaAtual > 1
+      )
+        paginaAtual--;
+      renderizarTabela();
+    },
+  );
+};
+
+// --- LOGICA DE EDIÇÃO ---
+document.getElementById("btnEditar").onclick = () => {
+  const selecionados = document.querySelectorAll(".checkItem:checked");
+
+  if (selecionados.length === 0) {
+    return exibirAviso("Selecione um item para editar.");
+  }
+
+  if (selecionados.length > 1) {
+    return exibirAviso(
+      "Você só pode editar um item por vez. Desmarque os outros.",
+    );
+  }
+
+  const check = selecionados[0];
+  const p = produtos.find((prod) => prod.id === Number(check.dataset.id));
+
+  linhaEditandoId = p.id;
+  document.getElementById("iptNome").value = p.nome;
+  document.getElementById("iptSku").value = p.sku;
+  document.getElementById("iptCond").value = p.cond;
+  document.getElementById("iptLocal").value = p.local;
+  document.getElementById("iptQuant").value = p.quant;
+  document.getElementById("iptQuantReservada").value = p.reserv;
+  document.getElementById("iptPreco").value = p.preco;
+
+  document.getElementById("modalTitulo").innerText = "Editar Produto";
   modal.style.display = "flex";
-});
+};
 
-btnDeletar.addEventListener("click", () => {
-  const checkboxes = document.querySelectorAll(".checkItem:checked");
-  if (checkboxes.length === 0) {
-    exibirAviso("Selecione ao menos um produto.");
-    return;
-  }
-  exibirConfirmacao(`Deletar ${checkboxes.length} item(ns)?`, () => {
-    checkboxes.forEach((cb) => cb.closest("tr").remove());
-    checkTodos.checked = false;
-  });
-});
-
-selectArmazem.addEventListener("change", () => {
-  const destino = selectArmazem.value;
-  const checkboxes = document.querySelectorAll(".checkItem:checked");
-  if (!destino || checkboxes.length === 0) {
-    if (destino) exibirAviso("Selecione os produtos primeiro.");
-    selectArmazem.value = "";
-    return;
-  }
-  checkboxes.forEach((cb) => {
-    cb.closest("tr").querySelector(".col-local").innerText = destino;
-  });
-  selectArmazem.value = "";
-});
-
-checkTodos.addEventListener("change", () => {
-  document
-    .querySelectorAll(".checkItem")
-    .forEach((cb) => (cb.checked = checkTodos.checked));
-});
-
+// --- UTILITÁRIOS ---
 function fecharELimpar() {
   modal.style.display = "none";
-  [
-    iptNome,
-    iptSku,
-    iptCond,
-    iptLocal,
-    iptQuant,
-    iptQuantReservada,
-    iptPreco,
-  ].forEach((i) => (i.value = ""));
+  linhaEditandoId = null;
+  modal.querySelectorAll("input").forEach((i) => (i.value = ""));
 }
+
+function exibirAviso(msg) {
+  document.getElementById("avisoMsg").innerText = msg;
+  document.getElementById("modalAviso").style.display = "flex";
+}
+
+function exibirConfirmacao(msg, cb) {
+  document.getElementById("confirmMsg").innerText = msg;
+  document.getElementById("modalConfirmacao").style.display = "flex";
+  document.getElementById("btnAceitarConfirm").onclick = () => {
+    cb();
+    document.getElementById("modalConfirmacao").style.display = "none";
+  };
+}
+
+document.getElementById("btnFecharAviso").onclick = () =>
+  (document.getElementById("modalAviso").style.display = "none");
+document.getElementById("btnCancelarConfirm").onclick = () =>
+  (document.getElementById("modalConfirmacao").style.display = "none");
+document.getElementById("btnAbrirModal").onclick = () => {
+  modal.style.display = "flex";
+  document.getElementById("modalTitulo").innerText = "Cadastrar Novo Produto";
+  linhaEditandoId = null;
+  modal.querySelectorAll("input").forEach((i) => (i.value = ""));
+};
+document.getElementById("btnCancelar").onclick = fecharELimpar;
+document.getElementById("checkTodos").onclick = (e) => {
+  document
+    .querySelectorAll(".checkItem")
+    .forEach((cb) => (cb.checked = e.target.checked));
+};

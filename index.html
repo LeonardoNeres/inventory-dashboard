@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sistema de estoque</title>
+    <title>Sistema de Estoque Profissional</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="app">
       <aside class="sidebar">
         <h3>FILTRAR PRODUTOS</h3>
-        <input type="text" placeholder="Pesquisar por nome" />
+        <input type="text" id="filtroNome" placeholder="Pesquisar por nome" />
         <label>Tags</label>
         <input type="text" placeholder="Filtrar por tag" />
         <label>SKU</label>
@@ -61,7 +61,9 @@
           </div>
 
           <div>
-            <button class="btn-action" id="btnExportar">Exportar</button>
+            <button class="btn-action" id="btnExportar">
+              Exportar Selecionados
+            </button>
             <button class="btn-action" id="btnImportar">Importar Dados</button>
             <button class="primary" id="btnAbrirModal">
               + Adicionar produto
@@ -69,28 +71,40 @@
           </div>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th><input type="checkbox" id="checkTodos" /></th>
-              <th>NOME</th>
-              <th>SKU</th>
-              <th>CONDIÇÃO</th>
-              <th>LOCALIZAÇÃO</th>
-              <th>DISPONÍVEL</th>
-              <th>RESERVADO</th>
-              <th>PREÇO</th>
-              <th>MODIFICADO</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaProdutos"></tbody>
-        </table>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="checkTodos" /></th>
+                <th>NOME</th>
+                <th>SKU</th>
+                <th>CONDIÇÃO</th>
+                <th>LOCALIZAÇÃO</th>
+                <th>DISPONÍVEL</th>
+                <th>RESERVADO</th>
+                <th>PREÇO</th>
+                <th>MODIFICADO</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaProdutos"></tbody>
+          </table>
+        </div>
 
         <div class="pagination">
-          <button class="btn-pag">Primeira</button>
-          <button class="btn-pag">Anterior</button>
-          <button class="btn-pag active">1</button>
-          <button class="btn-pag">Próxima</button>
+          <button class="btn-pag" id="btnPrimeira">Primeira</button>
+          <button class="btn-pag" id="btnAnterior">Anterior</button>
+          <span id="infoPagina">Página 1 de 1</span>
+          <button class="btn-pag" id="btnProxima">Próxima</button>
+
+          <div class="page-size-selector">
+            <span>Exibir:</span>
+            <select id="selectItensPorPagina" class="btn-pag">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
         </div>
       </main>
     </div>
@@ -103,54 +117,82 @@
     />
 
     <div id="modalProduto" class="modal-overlay">
-      <div class="modal-content">
+      <div class="modal-content modal-largo">
         <h3 id="modalTitulo">Cadastrar Novo Produto</h3>
-        <div class="form-group">
-          <label>Nome do Produto</label>
-          <input type="text" id="iptNome" placeholder="Ex: Câmera IP" />
-          <label>SKU</label>
-          <input type="text" id="iptSku" placeholder="Ex: 001" />
-          <label>Condição</label>
-          <input type="text" id="iptCond" placeholder="Ex: new" />
-          <label>Localização Inicial</label>
-          <input type="text" id="iptLocal" placeholder="Ex: Armazém 1" />
-          <label>Quantidade Disponível</label>
-          <input type="number" id="iptQuant" placeholder="Ex: 50" />
-          <label>Quantidade Reservada</label>
-          <input type="number" id="iptQuantReservada" placeholder="Ex: 10" />
-          <label>Preço</label>
-          <input type="text" id="iptPreco" placeholder="Ex: 150.00" />
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>Nome</label><input type="text" id="iptNome" />
+          </div>
+          <div class="form-group">
+            <label>SKU</label><input type="text" id="iptSku" />
+          </div>
+          <div class="form-group">
+            <label>Condição</label><input type="text" id="iptCond" />
+          </div>
+          <div class="form-group">
+            <label>Local</label><input type="text" id="iptLocal" />
+          </div>
+          <div class="form-group">
+            <label>Preço</label><input type="text" id="iptPreco" />
+          </div>
+          <div class="form-group">
+            <label>Disponível</label
+            ><input type="number" id="iptQuant" value="0" />
+          </div>
+          <div class="form-group">
+            <label>Reservado</label
+            ><input type="number" id="iptQuantReservada" value="0" />
+          </div>
         </div>
         <div class="modal-buttons">
           <button class="clear" id="btnCancelar">Cancelar</button>
-          <button class="apply" id="btnSalvar">Salvar Produto</button>
+          <button class="apply" id="btnSalvar">Salvar</button>
         </div>
       </div>
     </div>
 
-    <div id="modalConfirmacao" class="modal-overlay">
-      <div class="modal-content" style="text-align: center">
-        <h3 id="confirmTitulo">Confirmar Ação</h3>
-        <p
-          id="confirmMsg"
-          style="margin: 15px 0; color: #57606f; font-size: 14px"
-        ></p>
+    <div id="modalExportar" class="modal-overlay">
+      <div class="modal-content text-center">
+        <h3>Exportar Dados</h3>
+        <p style="margin-bottom: 10px; font-size: 14px; color: #666">
+          Defina o nome do arquivo para download:
+        </p>
+        <input
+          type="text"
+          id="iptNomeArquivo"
+          placeholder="estoque_resumo"
+          style="
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+          "
+        />
         <div class="modal-buttons">
-          <button class="clear" id="btnCancelarConfirm">Não, voltar</button>
-          <button class="apply" id="btnAceitarConfirm">Sim, confirmar</button>
+          <button class="clear" id="btnCancelarExport">Cancelar</button>
+          <button class="apply" id="btnConfirmarExport">Baixar .txt</button>
         </div>
       </div>
     </div>
 
     <div id="modalAviso" class="modal-overlay">
-      <div class="modal-content" style="text-align: center">
-        <h3>Atenção</h3>
-        <p
-          id="avisoMsg"
-          style="margin: 15px 0; color: #57606f; font-size: 14px"
-        ></p>
+      <div class="modal-content text-center">
+        <h3>Aviso</h3>
+        <p id="avisoMsg" style="margin: 15px 0"></p>
         <div class="modal-buttons">
-          <button class="apply" id="btnFecharAviso">Ok, entendi</button>
+          <button class="apply" id="btnFecharAviso">Ok</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modalConfirmacao" class="modal-overlay">
+      <div class="modal-content text-center">
+        <h3>Confirmar</h3>
+        <p id="confirmMsg" style="margin: 15px 0"></p>
+        <div class="modal-buttons">
+          <button class="clear" id="btnCancelarConfirm">Não</button>
+          <button class="apply" id="btnAceitarConfirm">Sim</button>
         </div>
       </div>
     </div>
