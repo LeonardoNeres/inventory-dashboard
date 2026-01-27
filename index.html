@@ -56,12 +56,13 @@
               <option value="Armazém 2">Armazém 2</option>
               <option value="Armazém 3">Armazém 3</option>
             </select>
-            <button id="btnEditar" class="btn-action">Editar</button> <button id="btnDeletar" class="btn-action">Deletar</button>
+            <button id="btnEditar" class="btn-action">Editar</button>
+            <button id="btnDeletar" class="btn-action">Deletar</button>
           </div>
 
           <div>
-            <button class="btn-action">Exportar</button>
-            <button class="btn-action">Importar do CSV</button>
+            <button class="btn-action" id="btnExportar">Exportar</button>
+            <button class="btn-action" id="btnImportar">Importar Dados</button>
             <button class="primary" id="btnAbrirModal">
               + Adicionar produto
             </button>
@@ -78,7 +79,7 @@
               <th>LOCALIZAÇÃO</th>
               <th>DISPONÍVEL</th>
               <th>RESERVADO</th>
-              <th>À MÃO</th> <th>PREÇO</th>
+              <th>PREÇO</th>
               <th>MODIFICADO</th>
             </tr>
           </thead>
@@ -93,6 +94,13 @@
         </div>
       </main>
     </div>
+
+    <input
+      type="file"
+      id="iptFileImport"
+      accept=".txt,.csv"
+      style="display: none"
+    />
 
     <div id="modalProduto" class="modal-overlay">
       <div class="modal-content">
@@ -116,6 +124,33 @@
         <div class="modal-buttons">
           <button class="clear" id="btnCancelar">Cancelar</button>
           <button class="apply" id="btnSalvar">Salvar Produto</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modalConfirmacao" class="modal-overlay">
+      <div class="modal-content" style="text-align: center">
+        <h3 id="confirmTitulo">Confirmar Ação</h3>
+        <p
+          id="confirmMsg"
+          style="margin: 15px 0; color: #57606f; font-size: 14px"
+        ></p>
+        <div class="modal-buttons">
+          <button class="clear" id="btnCancelarConfirm">Não, voltar</button>
+          <button class="apply" id="btnAceitarConfirm">Sim, confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modalAviso" class="modal-overlay">
+      <div class="modal-content" style="text-align: center">
+        <h3>Atenção</h3>
+        <p
+          id="avisoMsg"
+          style="margin: 15px 0; color: #57606f; font-size: 14px"
+        ></p>
+        <div class="modal-buttons">
+          <button class="apply" id="btnFecharAviso">Ok, entendi</button>
         </div>
       </div>
     </div>
