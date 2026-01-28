@@ -37,8 +37,8 @@
         <nav class="top-nav">
           <ul>
             <li>Painel</li>
-            <li class="active">Produtos</li>
-            <li>Armazém</li>
+            <li class="active" id="navProdutos">Produtos</li>
+            <li id="navArmazem">Armazém</li>
             <li>Pedidos</li>
             <li>Relatório</li>
           </ul>
@@ -48,62 +48,130 @@
           </div>
         </nav>
 
-        <div class="actions">
-          <div>
-            <select id="selectArmazem" class="btn-action">
-              <option value="">Mudar Armazém...</option>
-              <option value="Armazém 1">Armazém 1</option>
-              <option value="Armazém 2">Armazém 2</option>
-              <option value="Armazém 3">Armazém 3</option>
-            </select>
-            <button id="btnEditar" class="btn-action">Editar</button>
-            <button id="btnDeletar" class="btn-action">Deletar</button>
+        <div id="abaProdutos">
+          <div class="actions">
+            <div>
+              <select id="selectArmazem" class="btn-action">
+                <option value="">Mudar Armazém...</option>
+                <option value="Armazém 1">Armazém 1</option>
+                <option value="Armazém 2">Armazém 2</option>
+                <option value="Armazém 3">Armazém 3</option>
+              </select>
+              <button id="btnEditar" class="btn-action">Editar</button>
+              <button id="btnDeletar" class="btn-action">Deletar</button>
+            </div>
+
+            <div>
+              <button class="btn-action" id="btnExportar">
+                Exportar Selecionados
+              </button>
+              <button class="btn-action" id="btnImportar">
+                Importar Dados
+              </button>
+              <button class="primary" id="btnAbrirModal">
+                + Adicionar produto
+              </button>
+            </div>
           </div>
 
-          <div>
-            <button class="btn-action" id="btnExportar">
-              Exportar Selecionados
-            </button>
-            <button class="btn-action" id="btnImportar">Importar Dados</button>
-            <button class="primary" id="btnAbrirModal">
-              + Adicionar produto
-            </button>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="checkTodos" /></th>
+                  <th>NOME</th>
+                  <th>SKU</th>
+                  <th>CONDIÇÃO</th>
+                  <th>LOCALIZAÇÃO</th>
+                  <th>DISPONÍVEL</th>
+                  <th>RESERVADO</th>
+                  <th>PREÇO</th>
+                  <th>MODIFICADO</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaProdutos"></tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <button class="btn-pag" id="btnPrimeira">Primeira</button>
+            <button class="btn-pag" id="btnAnterior">Anterior</button>
+            <span id="infoPagina">Página 1 de 1</span>
+            <button class="btn-pag" id="btnProxima">Próxima</button>
+
+            <div class="page-size-selector">
+              <span>Exibir:</span>
+              <select id="selectItensPorPagina" class="btn-pag">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th><input type="checkbox" id="checkTodos" /></th>
-                <th>NOME</th>
-                <th>SKU</th>
-                <th>CONDIÇÃO</th>
-                <th>LOCALIZAÇÃO</th>
-                <th>DISPONÍVEL</th>
-                <th>RESERVADO</th>
-                <th>PREÇO</th>
-                <th>MODIFICADO</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaProdutos"></tbody>
-          </table>
-        </div>
+        <div id="abaArmazem" style="display: none">
+          <div class="warehouse-grid">
+            <div
+              class="zone"
+              data-local="Armazém 1"
+              ondragover="allowDrop(event)"
+              ondrop="drop(event)"
+            >
+              <div class="zone-header">
+                <h3>Armazém 1</h3>
+                <span class="badge" id="count-armazem-1">0</span>
+              </div>
+              <div class="items-container" id="zone-armazem-1"></div>
+            </div>
+            <div
+              class="zone"
+              data-local="Armazém 2"
+              ondragover="allowDrop(event)"
+              ondrop="drop(event)"
+            >
+              <div class="zone-header">
+                <h3>Armazém 2</h3>
+                <span class="badge" id="count-armazem-2">0</span>
+              </div>
+              <div class="items-container" id="zone-armazem-2"></div>
+            </div>
+            <div
+              class="zone"
+              data-local="Armazém 3"
+              ondragover="allowDrop(event)"
+              ondrop="drop(event)"
+            >
+              <div class="zone-header">
+                <h3>Armazém 3</h3>
+                <span class="badge" id="count-armazem-3">0</span>
+              </div>
+              <div class="items-container" id="zone-armazem-3"></div>
+            </div>
+            <div
+              class="zone incoming"
+              data-local="Recebimento"
+              ondragover="allowDrop(event)"
+              ondrop="drop(event)"
+            >
+              <div class="zone-header">
+                <h3>Recebimento (Entrada)</h3>
+                <span class="badge" id="count-recebimento">0</span>
+              </div>
+              <div class="items-container" id="zone-recebimento"></div>
+            </div>
+          </div>
 
-        <div class="pagination">
-          <button class="btn-pag" id="btnPrimeira">Primeira</button>
-          <button class="btn-pag" id="btnAnterior">Anterior</button>
-          <span id="infoPagina">Página 1 de 1</span>
-          <button class="btn-pag" id="btnProxima">Próxima</button>
-
-          <div class="page-size-selector">
-            <span>Exibir:</span>
-            <select id="selectItensPorPagina" class="btn-pag">
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-            </select>
+          <!-- HISTÓRICO DE MOVIMENTAÇÕES (NOVO) -->
+          <div class="historico-painel">
+            <div class="historico-header">
+              <h3>📋 Histórico de Movimentações</h3>
+              <span id="contador-historico">0 registros</span>
+            </div>
+            <div class="historico-logs" id="logsHistorico">
+              <div class="log-vazio">Nenhuma movimentação registrada ainda.</div>
+            </div>
           </div>
         </div>
       </main>
@@ -131,6 +199,9 @@
           </div>
           <div class="form-group">
             <label>Local</label><input type="text" id="iptLocal" />
+            <small style="color: #666; font-size: 11px; margin-top: 3px">
+              Sugestões: Recebimento, Armazém 1, Armazém 2, Armazém 3
+            </small>
           </div>
           <div class="form-group">
             <label>Preço</label><input type="text" id="iptPreco" />
