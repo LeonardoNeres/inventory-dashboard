@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistema de Estoque Profissional</title>
     <link rel="stylesheet" href="style.css" />
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <div class="app">
@@ -36,8 +38,8 @@
       <main class="main">
         <nav class="top-nav">
           <ul>
-            <li>Painel</li>
-            <li class="active" id="navProdutos">Produtos</li>
+            <li id="navPainel" class="active">Painel</li>
+            <li id="navProdutos">Produtos</li>
             <li id="navArmazem">Armazém</li>
             <li>Pedidos</li>
             <li>Relatório</li>
@@ -48,7 +50,109 @@
           </div>
         </nav>
 
-        <div id="abaProdutos">
+        <!-- NOVA ABA: PAINEL -->
+        <div id="abaPainel">
+          <div class="dashboard-header">
+            <h2>Visão Geral do Estoque</h2>
+            <div class="periodo-selector">
+              <select id="selectPeriodo">
+                <option value="hoje">Hoje</option>
+                <option value="semana" selected>Esta Semana</option>
+                <option value="mes">Este Mês</option>
+                <option value="ano">Este Ano</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- CARDS DE MÉTRICAS -->
+          <div class="metricas-container">
+            <div class="card-metrica">
+              <div class="card-icon">📦</div>
+              <div class="card-content">
+                <h3 id="totalProdutos">0</h3>
+                <p>Total de Produtos</p>
+              </div>
+            </div>
+            <div class="card-metrica">
+              <div class="card-icon">💰</div>
+              <div class="card-content">
+                <h3 id="valorTotal">R$ 0,00</h3>
+                <p>Valor Total</p>
+              </div>
+            </div>
+            <div class="card-metrica">
+              <div class="card-icon">📥</div>
+              <div class="card-content">
+                <h3 id="produtosRecebimento">0</h3>
+                <p>Em Recebimento</p>
+              </div>
+            </div>
+            <div class="card-metrica alerta">
+              <div class="card-icon">⚠️</div>
+              <div class="card-content">
+                <h3 id="estoqueBaixo">0</h3>
+                <p>Estoque Baixo</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- GRÁFICOS -->
+          <div class="graficos-container">
+            <div class="grafico-card">
+              <h3>📊 Distribuição por Localização</h3>
+              <canvas id="graficoLocalizacao"></canvas>
+            </div>
+            <div class="grafico-card">
+              <h3>📈 Top 5 Produtos Mais Movimentados</h3>
+              <canvas id="graficoTopProdutos"></canvas>
+            </div>
+          </div>
+
+          <!-- TABELAS RÁPIDAS -->
+          <div class="tabelas-container">
+            <div class="tabela-card">
+              <h3>⚠️ Produtos com Estoque Baixo</h3>
+              <div class="tabela-pequena-container">
+                <table class="tabela-pequena">
+                  <thead>
+                    <tr>
+                      <th>SKU</th>
+                      <th>Nome</th>
+                      <th>Disponível</th>
+                      <th>Mínimo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabelaEstoqueBaixo"></tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div class="tabela-card">
+              <h3>🔄 Últimas Movimentações</h3>
+              <div class="tabela-pequena-container">
+                <table class="tabela-pequena">
+                  <thead>
+                    <tr>
+                      <th>Hora</th>
+                      <th>Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabelaUltimasMovimentacoes"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOTÃO DE RELATÓRIO -->
+          <div class="dashboard-footer">
+            <button class="btn-relatorio" id="btnGerarRelatorio">
+              📄 Gerar Relatório Detalhado
+            </button>
+          </div>
+        </div>
+
+        <!-- ABA PRODUTOS (EXISTENTE) -->
+        <div id="abaProdutos" style="display: none">
           <div class="actions">
             <div>
               <select id="selectArmazem" class="btn-action">
@@ -111,6 +215,7 @@
           </div>
         </div>
 
+        <!-- ABA ARMAZÉM (EXISTENTE) -->
         <div id="abaArmazem" style="display: none">
           <div class="warehouse-grid">
             <div
@@ -163,7 +268,7 @@
             </div>
           </div>
 
-          <!-- HISTÓRICO DE MOVIMENTAÇÕES (NOVO) -->
+          <!-- HISTÓRICO DE MOVIMENTAÇÕES -->
           <div class="historico-painel">
             <div class="historico-header">
               <h3>📋 Histórico de Movimentações</h3>
@@ -184,6 +289,7 @@
       style="display: none"
     />
 
+    <!-- MODAIS -->
     <div id="modalProduto" class="modal-overlay">
       <div class="modal-content modal-largo">
         <h3 id="modalTitulo">Cadastrar Novo Produto</h3>
@@ -269,5 +375,6 @@
     </div>
 
     <script src="script.js"></script>
+    <script src="dashboard.js"></script>
   </body>
 </html>
