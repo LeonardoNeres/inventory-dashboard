@@ -253,7 +253,7 @@ function atualizarTabelaEstoqueBaixo() {
   
   const produtosBaixos = produtos.filter(p => {
     const quant = parseInt(p.quant) || 0;
-    return quant < 5 && quant > 0;
+    return quant < 10 && quant > 0;
   }).slice(0, 10);
   
   if (produtosBaixos.length === 0) {
@@ -269,7 +269,7 @@ function atualizarTabelaEstoqueBaixo() {
       <td>${p.sku}</td>
       <td>${p.nome.length > 20 ? p.nome.substring(0, 20) + '...' : p.nome}</td>
       <td class="${p.quant < 3 ? 'alerta-texto' : ''}">${p.quant}</td>
-      <td>5</td>
+      <td>10</td>
     `;
     tbody.appendChild(tr);
   });
@@ -292,7 +292,7 @@ function atualizarTabelaUltimasMovimentacoes() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${log.hora}</td>
-      <td>${log.acao.length > 40 ? log.acao.substring(0, 40) + '...' : log.acao}</td>
+      <td>${log.acao}</td>
     `;
     tbody.appendChild(tr);
   });
