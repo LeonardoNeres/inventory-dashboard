@@ -41,7 +41,7 @@
             <li id="navPainel" class="active">Painel</li>
             <li id="navProdutos">Produtos</li>
             <li id="navArmazem">Armazém</li>
-            <li>Pedidos</li>
+            <li id="navPedidos">Pedidos</li>
             <li>Relatório</li>
           </ul>
           <div class="user">
@@ -281,6 +281,73 @@
             </div>
           </div>
         </div>
+
+        <!-- ABA PEDIDOS (NOVA) -->
+        <div id="abaPedidos" style="display: none">
+          <div class="actions">
+            <div>
+              <select id="selectFiltrarStatus" class="btn-action">
+                <option value="">Todos os status</option>
+                <option value="rascunho">Rascunho</option>
+                <option value="pendente">Pendente</option>
+                <option value="concluido">Concluído</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+              <select id="selectFiltrarTipo" class="btn-action">
+                <option value="">Todos os tipos</option>
+                <option value="entrada">Entrada</option>
+                <option value="saida">Saída</option>
+              </select>
+            </div>
+
+            <div>
+              <button class="btn-action" id="btnCancelarPedido">
+                Cancelar Pedido
+              </button>
+              <button class="btn-action" id="btnConfirmarPedido">
+                Confirmar Pedido
+              </button>
+              <button class="primary" id="btnNovoPedido">+ Novo Pedido</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="checkTodosPedidos" /></th>
+                  <th>Nº PEDIDO</th>
+                  <th>TIPO</th>
+                  <th>STATUS</th>
+                  <th>CLIENTE/FORNECEDOR</th>
+                  <th>ITENS</th>
+                  <th>VALOR TOTAL</th>
+                  <th>DATA</th>
+                  <th>CRIADO POR</th>
+                  <th>AÇÕES</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaPedidos"></tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <button class="btn-pag" id="btnPrimeiraPedidos">Primeira</button>
+            <button class="btn-pag" id="btnAnteriorPedidos">Anterior</button>
+            <span id="infoPaginaPedidos">Página 1 de 1</span>
+            <button class="btn-pag" id="btnProximaPedidos">Próxima</button>
+
+            <div class="page-size-selector">
+              <span>Exibir:</span>
+              <select id="selectItensPorPaginaPedidos" class="btn-pag">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
 
@@ -372,6 +439,198 @@
         <div class="modal-buttons">
           <button class="clear" id="btnCancelarConfirm">Não</button>
           <button class="apply" id="btnAceitarConfirm">Sim</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL NOVO PEDIDO -->
+    <div id="modalPedido" class="modal-overlay">
+      <div class="modal-content modal-largo">
+        <h3 id="modalTituloPedido">Novo Pedido</h3>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="iptTipoPedido">
+              <option value="entrada">Entrada (Compra/Devolução)</option>
+              <option value="saida">Saída (Venda/Transferência)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Status</label>
+            <select id="iptStatusPedido">
+              <option value="rascunho">Rascunho</option>
+              <option value="pendente">Pendente</option>
+            </select>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Cliente/Fornecedor</label>
+            <input
+              type="text"
+              id="iptClienteFornecedor"
+              placeholder="Nome do cliente ou fornecedor"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Data de Entrega</label>
+            <input type="date" id="iptDataEntrega" />
+          </div>
+
+          <div class="form-group">
+            <label>Observações</label>
+            <input type="text" id="iptObservacoes" placeholder="Opcional" />
+          </div>
+        </div>
+
+        <!-- SEÇÃO DE ADICIONAR PRODUTOS -->
+        <div
+          style="
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+          "
+        >
+          <h4 style="margin-bottom: 15px; font-size: 14px">
+            📦 Produtos do Pedido
+          </h4>
+
+          <div style="display: flex; gap: 10px; margin-bottom: 15px">
+            <select
+              id="selectProdutoParaAdicionar"
+              style="flex: 1; padding: 8px"
+            >
+              <option value="">Selecione um produto...</option>
+              <!-- Produtos serão preenchidos via JavaScript -->
+            </select>
+            <input
+              type="number"
+              id="iptQuantidadeProduto"
+              placeholder="Qtd"
+              value="1"
+              min="1"
+              style="width: 80px; padding: 8px"
+            />
+            <button
+              class="btn-action"
+              id="btnAdicionarProdutoPedido"
+              style="padding: 8px 15px"
+            >
+              Adicionar
+            </button>
+          </div>
+
+          <div class="table-container" style="max-height: 200px">
+            <table>
+              <thead>
+                <tr>
+                  <th>PRODUTO</th>
+                  <th>SKU</th>
+                  <th>QUANTIDADE</th>
+                  <th>PREÇO UNIT.</th>
+                  <th>SUBTOTAL</th>
+                  <th>AÇÃO</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaItensPedido"></tbody>
+            </table>
+          </div>
+
+          <div style="text-align: right; margin-top: 15px; font-weight: bold">
+            <span style="font-size: 16px">Total: R$ </span>
+            <span id="totalPedido" style="font-size: 18px; color: #ff4757"
+              >0,00</span
+            >
+          </div>
+        </div>
+
+        <div class="modal-buttons">
+          <button class="clear" id="btnCancelarPedidoModal">Cancelar</button>
+          <button class="apply" id="btnSalvarPedido">Salvar Pedido</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DETALHES PEDIDO -->
+    <div id="modalDetalhesPedido" class="modal-overlay">
+      <div class="modal-content modal-largo">
+        <h3>Detalhes do Pedido <span id="detalhesNumeroPedido"></span></h3>
+
+        <div class="form-grid" style="margin-bottom: 20px">
+          <div class="form-group">
+            <label style="font-weight: normal; color: #666">Tipo</label>
+            <p id="detalhesTipo" style="margin-top: 5px; font-weight: bold"></p>
+          </div>
+
+          <div class="form-group">
+            <label style="font-weight: normal; color: #666">Status</label>
+            <p id="detalhesStatus" style="margin-top: 5px"></p>
+          </div>
+
+          <div class="form-group">
+            <label style="font-weight: normal; color: #666">Data Criação</label>
+            <p id="detalhesDataCriacao" style="margin-top: 5px"></p>
+          </div>
+
+          <div class="form-group">
+            <label style="font-weight: normal; color: #666">Data Entrega</label>
+            <p id="detalhesDataEntrega" style="margin-top: 5px"></p>
+          </div>
+
+          <div class="form-group full-width">
+            <label style="font-weight: normal; color: #666"
+              >Cliente/Fornecedor</label
+            >
+            <p
+              id="detalhesCliente"
+              style="margin-top: 5px; font-weight: bold"
+            ></p>
+          </div>
+
+          <div class="form-group full-width">
+            <label style="font-weight: normal; color: #666">Observações</label>
+            <p
+              id="detalhesObservacoes"
+              style="margin-top: 5px; font-style: italic"
+            ></p>
+          </div>
+        </div>
+
+        <h4 style="margin-bottom: 15px; font-size: 14px">📦 Produtos</h4>
+        <div class="table-container" style="max-height: 250px">
+          <table>
+            <thead>
+              <tr>
+                <th>PRODUTO</th>
+                <th>SKU</th>
+                <th>QUANTIDADE</th>
+                <th>PREÇO UNIT.</th>
+                <th>SUBTOTAL</th>
+              </tr>
+            </thead>
+            <tbody id="detalhesItensPedido"></tbody>
+          </table>
+        </div>
+
+        <div
+          style="
+            text-align: right;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #eee;
+          "
+        >
+          <span style="font-size: 18px; font-weight: bold">Total: R$ </span>
+          <span
+            id="detalhesTotalPedido"
+            style="font-size: 22px; color: #ff4757"
+          ></span>
+        </div>
+
+        <div class="modal-buttons" style="margin-top: 20px">
+          <button class="apply" id="btnFecharDetalhes">Fechar</button>
         </div>
       </div>
     </div>

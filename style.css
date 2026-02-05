@@ -440,6 +440,24 @@ td {
   font-size: 13px;
 }
 
+/* ===== ABA PEDIDOS (NOVA) ===== */
+#abaPedidos {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
+}
+
+#tabelaPedidos td {
+  font-size: 12px;
+}
+
+.checkItemPedido {
+  margin: 0;
+}
+
 /* ===== ABA ARMAZÉM (ORIGINAL) ===== */
 .warehouse-grid {
   display: grid;
@@ -578,7 +596,7 @@ td {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
-  z-index: 1000;
+  z-index: 1000; /* ← MANTÉM ESTE */
   justify-content: center;
   align-items: center;
 }
@@ -640,4 +658,9 @@ td {
 }
 .text-center {
   text-align: center;
+}
+
+#modalAviso,
+#modalConfirmacao {
+  z-index: 10000 !important;
 }

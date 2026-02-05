@@ -5,6 +5,13 @@ let itensPorPagina = 5;
 let linhaEditandoId = null;
 let historico = [];
 
+// ===== SISTEMA DE PEDIDOS =====
+let pedidos = [];
+let paginaAtualPedidos = 1;
+let itensPorPaginaPedidos = 10;
+let pedidoEditandoId = null;
+let itensPedidoAtual = [];
+
 // Variáveis para gráficos do painel
 let graficoLocalizacao = null;
 let graficoTopProdutos = null;
@@ -318,23 +325,420 @@ function atualizarTabelaUltimasMovimentacoes() {
   });
 }
 
+// ===== FUNÇÕES DO SISTEMA DE PEDIDOS =====
+function renderizarTabelaPedidos() {
+  const tbody = document.getElementById("tabelaPedidos");
+  tbody.innerHTML = "";
+
+  const inicio = (paginaAtualPedidos - 1) * itensPorPaginaPedidos;
+  const fim = inicio + itensPorPaginaPedidos;
+  const pedidosVisiveis = pedidos.slice(inicio, fim);
+
+  pedidosVisiveis.forEach((pedido) => {
+    const tr = document.createElement("tr");
+
+    // Formatar status com cores
+    let statusHTML = "";
+    switch (pedido.status) {
+      case "rascunho":
+        statusHTML =
+          '<span style="color: #666; background: #f1f2f6; padding: 3px 8px; border-radius: 10px; font-size: 11px;">📝 Rascunho</span>';
+        break;
+      case "pendente":
+        statusHTML =
+          '<span style="color: #ffa502; background: #fff8e1; padding: 3px 8px; border-radius: 10px; font-size: 11px;">⏳ Pendente</span>';
+        break;
+      case "concluido":
+        statusHTML =
+          '<span style="color: #2ed573; background: #e6fce6; padding: 3px 8px; border-radius: 10px; font-size: 11px;">✅ Concluído</span>';
+        break;
+      case "cancelado":
+        statusHTML =
+          '<span style="color: #ff4757; background: #ffe6e6; padding: 3px 8px; border-radius: 10px; font-size: 11px;">❌ Cancelado</span>';
+        break;
+      default:
+        statusHTML = pedido.status;
+    }
+
+    // Formatar tipo
+    const tipoTexto = pedido.tipo === "entrada" ? "📥 Entrada" : "📤 Saída";
+
+    tr.innerHTML = `
+      <td><input type="checkbox" class="checkItemPedido" data-id="${pedido.id}"></td>
+      <td style="font-weight: bold;">#${pedido.numero}</td>
+      <td>${tipoTexto}</td>
+      <td>${statusHTML}</td>
+      <td>${pedido.clienteFornecedor}</td>
+      <td>${pedido.itens.length} item(s)</td>
+      <td style="font-weight: bold;">R$ ${pedido.valorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+      <td>${pedido.dataCriacao}</td>
+      <td>${pedido.criadoPor}</td>
+      <td>
+        <button class="btn-action" style="padding: 4px 8px; font-size: 11px;" onclick="verDetalhesPedido(${pedido.id})">Ver</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const totalPaginas = Math.ceil(pedidos.length / itensPorPaginaPedidos) || 1;
+  document.getElementById("infoPaginaPedidos").innerText =
+    `Página ${paginaAtualPedidos} de ${totalPaginas}`;
+
+  document.getElementById("btnAnteriorPedidos").disabled =
+    paginaAtualPedidos === 1;
+  document.getElementById("btnProximaPedidos").disabled =
+    paginaAtualPedidos === totalPaginas;
+
+  document.getElementById("checkTodosPedidos").checked = false;
+}
+
+function carregarProdutosNoSelect() {
+  const select = document.getElementById("selectProdutoParaAdicionar");
+  select.innerHTML = '<option value="">Selecione um produto...</option>';
+
+  produtos.forEach((produto) => {
+    const option = document.createElement("option");
+    option.value = produto.id;
+    option.textContent = `${produto.nome} (SKU: ${produto.sku}) - Disp: ${produto.quant}`;
+    select.appendChild(option);
+  });
+}
+
+function adicionarItemAoPedido() {
+  const select = document.getElementById("selectProdutoParaAdicionar");
+  const quantidadeInput = document.getElementById("iptQuantidadeProduto");
+
+  const produtoId = parseInt(select.value);
+  const quantidade = parseInt(quantidadeInput.value) || 1;
+
+  if (!produtoId) {
+    exibirAviso("Selecione um produto para adicionar ao pedido.");
+    return;
+  }
+
+  const produto = produtos.find((p) => p.id === produtoId);
+
+  if (!produto) {
+    exibirAviso("Produto não encontrado.");
+    return;
+  }
+
+  // Verificar se já existe no pedido
+  const itemExistenteIndex = itensPedidoAtual.findIndex(
+    (item) => item.produtoId === produtoId,
+  );
+
+  if (itemExistenteIndex > -1) {
+    // Atualizar quantidade do item existente
+    itensPedidoAtual[itemExistenteIndex].quantidade += quantidade;
+  } else {
+    // Adicionar novo item
+    itensPedidoAtual.push({
+      produtoId: produtoId,
+      nome: produto.nome,
+      sku: produto.sku,
+      quantidade: quantidade,
+      precoUnitario: parseFloat(produto.preco) || 0,
+      subtotal: (parseFloat(produto.preco) || 0) * quantidade,
+    });
+  }
+
+  atualizarTabelaItensPedido();
+  select.value = "";
+  quantidadeInput.value = 1;
+}
+
+function atualizarTabelaItensPedido() {
+  const tbody = document.getElementById("tabelaItensPedido");
+  tbody.innerHTML = "";
+
+  let totalPedido = 0;
+
+  itensPedidoAtual.forEach((item, index) => {
+    const tr = document.createElement("tr");
+    const subtotal = item.quantidade * item.precoUnitario;
+    totalPedido += subtotal;
+
+    tr.innerHTML = `
+      <td>${item.nome}</td>
+      <td>${item.sku}</td>
+      <td>
+        <input type="number" value="${item.quantidade}" min="1" 
+               style="width: 60px; padding: 4px;" 
+               onchange="atualizarQuantidadeItem(${index}, this.value)">
+      </td>
+      <td>R$ ${item.precoUnitario.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+      <td>R$ ${subtotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+      <td>
+        <button class="btn-action" style="padding: 3px 6px; font-size: 10px;" 
+                onclick="removerItemPedido(${index})">Remover</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (itensPedidoAtual.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; color: #666; padding: 20px;">
+          Nenhum produto adicionado ao pedido.
+        </td>
+      </tr>
+    `;
+  }
+
+  document.getElementById("totalPedido").textContent =
+    totalPedido.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+}
+
+function atualizarQuantidadeItem(index, novaQuantidade) {
+  const qtd = parseInt(novaQuantidade) || 1;
+  if (qtd < 1) return;
+
+  itensPedidoAtual[index].quantidade = qtd;
+  itensPedidoAtual[index].subtotal =
+    qtd * itensPedidoAtual[index].precoUnitario;
+  atualizarTabelaItensPedido();
+}
+
+function removerItemPedido(index) {
+  itensPedidoAtual.splice(index, 1);
+  atualizarTabelaItensPedido();
+}
+
+function limparFormularioPedido() {
+  document.getElementById("iptTipoPedido").value = "entrada";
+  document.getElementById("iptStatusPedido").value = "rascunho";
+  document.getElementById("iptClienteFornecedor").value = "";
+  document.getElementById("iptDataEntrega").value = "";
+  document.getElementById("iptObservacoes").value = "";
+  itensPedidoAtual = [];
+  atualizarTabelaItensPedido();
+  pedidoEditandoId = null;
+}
+
+function salvarPedido() {
+  const tipo = document.getElementById("iptTipoPedido").value;
+  const status = document.getElementById("iptStatusPedido").value;
+  const clienteFornecedor = document.getElementById(
+    "iptClienteFornecedor",
+  ).value;
+  const dataEntrega = document.getElementById("iptDataEntrega").value;
+  const observacoes = document.getElementById("iptObservacoes").value;
+
+  if (!clienteFornecedor.trim()) {
+    exibirAviso("Informe o cliente/fornecedor do pedido.");
+    return;
+  }
+
+  if (itensPedidoAtual.length === 0) {
+    exibirAviso("Adicione pelo menos um item ao pedido.");
+    return;
+  }
+
+  // BLOQUEAR EDIÇÃO DE PEDIDOS JÁ CONCLUÍDOS OU CANCELADOS
+  if (pedidoEditandoId) {
+    const pedidoAntigo = pedidos.find((p) => p.id === pedidoEditandoId);
+    if (
+      pedidoAntigo.status === "concluido" ||
+      pedidoAntigo.status === "cancelado"
+    ) {
+      exibirAviso("Não é possível editar pedidos concluídos ou cancelados.");
+      return;
+    }
+  }
+
+  const valorTotal = itensPedidoAtual.reduce((total, item) => {
+    return total + item.quantidade * item.precoUnitario;
+  }, 0);
+
+  const dataCriacao = new Date().toLocaleDateString("pt-BR");
+  const dataEntregaFormatada = dataEntrega
+    ? new Date(dataEntrega).toLocaleDateString("pt-BR")
+    : "";
+
+  const numeroPedido = pedidoEditandoId
+    ? pedidos.find((p) => p.id === pedidoEditandoId).numero
+    : `PED${Date.now().toString().slice(-6)}`;
+
+  const pedidoData = {
+    id: pedidoEditandoId || Date.now(),
+    numero: numeroPedido,
+    tipo: tipo,
+    status: status,
+    clienteFornecedor: clienteFornecedor,
+    itens: [...itensPedidoAtual],
+    valorTotal: valorTotal,
+    dataCriacao: dataCriacao,
+    dataEntrega: dataEntregaFormatada,
+    observacoes: observacoes,
+    criadoPor: "Usuário",
+  };
+
+  if (pedidoEditandoId) {
+    // Editar pedido existente
+    const index = pedidos.findIndex((p) => p.id === pedidoEditandoId);
+    pedidos[index] = pedidoData;
+
+    registrarAcao(`Pedido #${numeroPedido} editado`);
+  } else {
+    // Novo pedido
+    pedidos.push(pedidoData);
+
+    registrarAcao(
+      `Novo pedido #${numeroPedido} criado (${tipo === "entrada" ? "Entrada" : "Saída"})`,
+    );
+  }
+
+  // Se o pedido for concluído, atualizar o estoque
+  if (status === "concluido") {
+    atualizarEstoquePorPedido(pedidoData);
+  }
+
+  document.getElementById("modalPedido").style.display = "none";
+  limparFormularioPedido();
+  renderizarTabelaPedidos();
+
+  // Atualizar painel se estiver visível
+  if (document.getElementById("abaPainel").style.display === "block") {
+    atualizarPainel();
+  }
+}
+
+function atualizarEstoquePorPedido(pedido) {
+  let temEstoqueInsuficiente = false;
+  let produtoSemEstoque = "";
+
+  // PRIMEIRO: Verificar se todos os produtos têm estoque suficiente
+  if (pedido.tipo === "saida") {
+    for (const item of pedido.itens) {
+      const produto = produtos.find((p) => p.id === item.produtoId);
+      if (produto) {
+        const estoqueDisponivel = parseInt(produto.quant) || 0;
+        if (estoqueDisponivel < item.quantidade) {
+          temEstoqueInsuficiente = true;
+          produtoSemEstoque = produto.nome;
+          break;
+        }
+      }
+    }
+  }
+
+  if (temEstoqueInsuficiente) {
+    exibirAviso(`Estoque insuficiente para ${produtoSemEstoque}!`);
+    return false; // Impede a confirmação do pedido
+  }
+
+  // SEGUNDO: Atualizar estoque
+  pedido.itens.forEach((item) => {
+    const produto = produtos.find((p) => p.id === item.produtoId);
+    if (produto) {
+      if (pedido.tipo === "entrada") {
+        // ENTRADA: aumenta estoque DISPONÍVEL
+        produto.quant = (parseInt(produto.quant) || 0) + item.quantidade;
+      } else if (pedido.tipo === "saida") {
+        // SAÍDA: Diminui DISPONÍVEL e aumenta RESERVADO
+        const estoqueDisponivel = parseInt(produto.quant) || 0;
+
+        // Diminui DISPONÍVEL
+        produto.quant = estoqueDisponivel - item.quantidade;
+        // Aumenta RESERVADO
+        produto.reserv = (parseInt(produto.reserv) || 0) + item.quantidade;
+      }
+      produto.data = new Date().toLocaleDateString("pt-BR");
+    }
+  });
+
+  // Atualizar tabela de produtos se estiver visível
+  if (document.getElementById("abaProdutos").style.display === "flex") {
+    renderizarTabela();
+  }
+
+  // Atualizar armazéns se estiver visível
+  if (document.getElementById("abaArmazem").style.display === "block") {
+    renderizarArmazens();
+  }
+
+  return true; // Pedido confirmado com sucesso
+}
+
+function verDetalhesPedido(pedidoId) {
+  const pedido = pedidos.find((p) => p.id === pedidoId);
+  if (!pedido) return;
+
+  document.getElementById("detalhesNumeroPedido").textContent =
+    `#${pedido.numero}`;
+  document.getElementById("detalhesTipo").textContent =
+    pedido.tipo === "entrada" ? "📥 Entrada" : "📤 Saída";
+  document.getElementById("detalhesStatus").innerHTML = getStatusHTML(
+    pedido.status,
+  );
+  document.getElementById("detalhesDataCriacao").textContent =
+    pedido.dataCriacao;
+  document.getElementById("detalhesDataEntrega").textContent =
+    pedido.dataEntrega || "Não definida";
+  document.getElementById("detalhesCliente").textContent =
+    pedido.clienteFornecedor;
+  document.getElementById("detalhesObservacoes").textContent =
+    pedido.observacoes || "Nenhuma observação.";
+  document.getElementById("detalhesTotalPedido").textContent =
+    pedido.valorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+
+  // Limpar e preencher itens
+  const tbody = document.getElementById("detalhesItensPedido");
+  tbody.innerHTML = "";
+
+  pedido.itens.forEach((item) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.nome}</td>
+      <td>${item.sku}</td>
+      <td>${item.quantidade}</td>
+      <td>R$ ${item.precoUnitario.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+      <td>R$ ${(item.quantidade * item.precoUnitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById("modalDetalhesPedido").style.display = "flex";
+}
+
+function getStatusHTML(status) {
+  switch (status) {
+    case "rascunho":
+      return '<span style="color: #666; background: #f1f2f6; padding: 3px 8px; border-radius: 10px; font-size: 11px;">📝 Rascunho</span>';
+    case "pendente":
+      return '<span style="color: #1e90ff; background: #e6f7ff; padding: 3px 8px; border-radius: 10px; font-size: 11px;">🚧 Processando</span>';
+    case "concluido":
+      return '<span style="color: #2ed573; background: #e6fce6; padding: 3px 8px; border-radius: 10px; font-size: 11px;">✅ Concluído</span>';
+    case "cancelado":
+      return '<span style="color: #ff4757; background: #ffe6e6; padding: 3px 8px; border-radius: 10px; font-size: 11px;">❌ Cancelado</span>';
+    default:
+      return status;
+  }
+}
+
 // ===== NAVEGAÇÃO ENTRE ABAS =====
 const navPainel = document.getElementById("navPainel");
 const navProdutos = document.getElementById("navProdutos");
 const navArmazem = document.getElementById("navArmazem");
+const navPedidos = document.getElementById("navPedidos");
 const abaPainel = document.getElementById("abaPainel");
 const abaProdutos = document.getElementById("abaProdutos");
 const abaArmazem = document.getElementById("abaArmazem");
+const abaPedidos = document.getElementById("abaPedidos");
 
 function mostrarPainel() {
   // Atualizar navegação
   navProdutos.classList.remove("active");
   navArmazem.classList.remove("active");
+  navPedidos.classList.remove("active");
   navPainel.classList.add("active");
 
   // Mostrar/ocultar abas
   abaProdutos.style.display = "none";
   abaArmazem.style.display = "none";
+  abaPedidos.style.display = "none";
   abaPainel.style.display = "block";
 
   // Atualizar painel
@@ -344,10 +748,12 @@ function mostrarPainel() {
 function mostrarProdutos() {
   navPainel.classList.remove("active");
   navArmazem.classList.remove("active");
+  navPedidos.classList.remove("active");
   navProdutos.classList.add("active");
 
   abaPainel.style.display = "none";
   abaArmazem.style.display = "none";
+  abaPedidos.style.display = "none";
   abaProdutos.style.display = "flex";
 
   renderizarTabela();
@@ -356,20 +762,37 @@ function mostrarProdutos() {
 function mostrarArmazem() {
   navPainel.classList.remove("active");
   navProdutos.classList.remove("active");
+  navPedidos.classList.remove("active");
   navArmazem.classList.add("active");
 
   abaPainel.style.display = "none";
   abaProdutos.style.display = "none";
+  abaPedidos.style.display = "none";
   abaArmazem.style.display = "block";
 
   renderizarArmazens();
   atualizarHistorico();
 }
 
+function mostrarPedidos() {
+  navPainel.classList.remove("active");
+  navProdutos.classList.remove("active");
+  navArmazem.classList.remove("active");
+  navPedidos.classList.add("active");
+
+  abaPainel.style.display = "none";
+  abaProdutos.style.display = "none";
+  abaArmazem.style.display = "none";
+  abaPedidos.style.display = "flex";
+
+  renderizarTabelaPedidos();
+}
+
 // Configurar eventos de navegação
 navPainel.onclick = mostrarPainel;
 navProdutos.onclick = mostrarProdutos;
 navArmazem.onclick = mostrarArmazem;
+navPedidos.onclick = mostrarPedidos;
 
 // ===== EVENTOS DO SISTEMA ORIGINAL =====
 document.getElementById("selectArmazem").onchange = (e) => {
@@ -861,14 +1284,268 @@ document.getElementById("btnGerarRelatorio").onclick = () => {
   );
 };
 
+// ===== EVENTOS DO SISTEMA DE PEDIDOS =====
+document.getElementById("btnNovoPedido").onclick = () => {
+  carregarProdutosNoSelect();
+  limparFormularioPedido();
+  document.getElementById("modalTituloPedido").textContent = "Novo Pedido";
+  pedidoEditandoId = null;
+  document.getElementById("modalPedido").style.display = "flex";
+
+  // Definir data de entrega padrão (7 dias a partir de hoje)
+  const hoje = new Date();
+  const umaSemana = new Date(hoje);
+  umaSemana.setDate(hoje.getDate() + 7);
+  document.getElementById("iptDataEntrega").value = umaSemana
+    .toISOString()
+    .split("T")[0];
+};
+
+document.getElementById("btnAdicionarProdutoPedido").onclick =
+  adicionarItemAoPedido;
+
+document.getElementById("btnSalvarPedido").onclick = salvarPedido;
+
+document.getElementById("btnCancelarPedidoModal").onclick = () => {
+  document.getElementById("modalPedido").style.display = "none";
+  limparFormularioPedido();
+};
+
+document.getElementById("btnFecharDetalhes").onclick = () => {
+  document.getElementById("modalDetalhesPedido").style.display = "none";
+};
+
+// Eventos de paginação da tabela de pedidos
+document.getElementById("btnProximaPedidos").onclick = () => {
+  const totalPaginas = Math.ceil(pedidos.length / itensPorPaginaPedidos);
+  if (paginaAtualPedidos < totalPaginas) {
+    paginaAtualPedidos++;
+    renderizarTabelaPedidos();
+  }
+};
+
+document.getElementById("btnAnteriorPedidos").onclick = () => {
+  if (paginaAtualPedidos > 1) {
+    paginaAtualPedidos--;
+    renderizarTabelaPedidos();
+  }
+};
+
+document.getElementById("btnPrimeiraPedidos").onclick = () => {
+  paginaAtualPedidos = 1;
+  renderizarTabelaPedidos();
+};
+
+document.getElementById("selectItensPorPaginaPedidos").onchange = () => {
+  itensPorPaginaPedidos = parseInt(
+    document.getElementById("selectItensPorPaginaPedidos").value,
+  );
+  paginaAtualPedidos = 1;
+  renderizarTabelaPedidos();
+};
+
+// Checkbox "todos" para pedidos
+document.getElementById("checkTodosPedidos").onclick = (e) => {
+  document.querySelectorAll(".checkItemPedido").forEach((cb) => {
+    cb.checked = e.target.checked;
+  });
+};
+
+// Confirmar pedido selecionado
+document.getElementById("btnConfirmarPedido").onclick = () => {
+  const selecionados = Array.from(
+    document.querySelectorAll(".checkItemPedido:checked"),
+  ).map((cb) => Number(cb.dataset.id));
+
+  if (selecionados.length === 0) {
+    exibirAviso("Selecione pelo menos um pedido para confirmar.");
+    return;
+  }
+
+  // VERIFICAR se algum já está concluído ou cancelado
+  const pedidosInvalidos = [];
+  selecionados.forEach((id) => {
+    const pedido = pedidos.find((p) => p.id === id);
+    if (pedido.status === "concluido") {
+      pedidosInvalidos.push(`#${pedido.numero} (já concluído)`);
+    } else if (pedido.status === "cancelado") {
+      pedidosInvalidos.push(`#${pedido.numero} (cancelado)`);
+    }
+  });
+
+  if (pedidosInvalidos.length > 0) {
+    exibirAviso(`Não é possível confirmar: ${pedidosInvalidos.join(", ")}`);
+    return;
+  }
+
+  exibirConfirmacao(
+    `Deseja confirmar ${selecionados.length} pedido(s)? Esta ação atualizará o estoque.`,
+    () => {
+      selecionados.forEach((pedidoId) => {
+        const pedido = pedidos.find((p) => p.id === pedidoId);
+        if (
+          pedido &&
+          pedido.status !== "concluido" &&
+          pedido.status !== "cancelado"
+        ) {
+          pedido.status = "concluido";
+
+          // Atualizar estoque - verifica se deu certo
+          const estoqueAtualizado = atualizarEstoquePorPedido(pedido);
+
+          if (estoqueAtualizado) {
+            registrarAcao(
+              `Pedido #${pedido.numero} confirmado e estoque atualizado`,
+            );
+          } else {
+            // Se não tinha estoque, volta o status
+            pedido.status = "pendente";
+          }
+        }
+      });
+
+      renderizarTabelaPedidos();
+
+      // Atualizar painel se estiver visível
+      if (document.getElementById("abaPainel").style.display === "block") {
+        atualizarPainel();
+      }
+    },
+  );
+};
+
+// Cancelar pedido selecionado
+document.getElementById("btnCancelarPedido").onclick = () => {
+  const selecionados = Array.from(
+    document.querySelectorAll(".checkItemPedido:checked"),
+  ).map((cb) => Number(cb.dataset.id));
+
+  if (selecionados.length === 0) {
+    exibirAviso("Selecione pelo menos um pedido para cancelar.");
+    return;
+  }
+
+  // VERIFICAR se algum já está concluído
+  const pedidosConcluidos = [];
+  selecionados.forEach((id) => {
+    const pedido = pedidos.find((p) => p.id === id);
+    if (pedido.status === "concluido") {
+      pedidosConcluidos.push(`#${pedido.numero}`);
+    }
+  });
+
+  if (pedidosConcluidos.length > 0) {
+    exibirAviso(
+      `Não é possível cancelar pedidos já concluídos: ${pedidosConcluidos.join(", ")}`,
+    );
+    return;
+  }
+
+  exibirConfirmacao(`Deseja cancelar ${selecionados.length} pedido(s)?`, () => {
+    selecionados.forEach((pedidoId) => {
+      const pedido = pedidos.find((p) => p.id === pedidoId);
+      if (pedido && pedido.status !== "cancelado") {
+        pedido.status = "cancelado";
+        registrarAcao(`Pedido #${pedido.numero} cancelado`);
+      }
+    });
+
+    renderizarTabelaPedidos();
+  });
+};
+
+document.getElementById("selectFiltrarStatus").onchange = aplicarFiltrosPedidos;
+
+document.getElementById("selectFiltrarTipo").onchange = aplicarFiltrosPedidos;
 // ===== INICIALIZAÇÃO =====
 // Configurar navegação inicial - Painel ativo
 abaProdutos.style.display = "none";
 abaArmazem.style.display = "none";
+abaPedidos.style.display = "none";
 abaPainel.style.display = "block";
 navProdutos.classList.remove("active");
 navArmazem.classList.remove("active");
+navPedidos.classList.remove("active");
 navPainel.classList.add("active");
 
 // Inicializar sistema
 renderizarTabela();
+
+// FUNÇÃO 1: Aplicar filtros
+function aplicarFiltrosPedidos() {
+  const filtroStatus = document.getElementById("selectFiltrarStatus").value;
+  const filtroTipo = document.getElementById("selectFiltrarTipo").value;
+
+  let pedidosFiltrados = [...pedidos];
+
+  // Filtrar por status
+  if (filtroStatus) {
+    pedidosFiltrados = pedidosFiltrados.filter(
+      (p) => p.status === filtroStatus,
+    );
+  }
+
+  // Filtrar por tipo
+  if (filtroTipo) {
+    pedidosFiltrados = pedidosFiltrados.filter((p) => p.tipo === filtroTipo);
+  }
+
+  // Mostrar pedidos filtrados
+  const tbody = document.getElementById("tabelaPedidos");
+  tbody.innerHTML = "";
+
+  pedidosFiltrados.forEach((pedido) => {
+    const tr = document.createElement("tr");
+
+    let statusHTML = "";
+    switch (pedido.status) {
+      case "rascunho":
+        statusHTML =
+          '<span style="color: #666; background: #f1f2f6; padding: 3px 8px; border-radius: 10px; font-size: 11px;">📝 Rascunho</span>';
+        break;
+      case "pendente":
+        statusHTML =
+          '<span style="color: #ffa502; background: #fff8e1; padding: 3px 8px; border-radius: 10px; font-size: 11px;">⏳ Pendente</span>';
+        break;
+      case "concluido":
+        statusHTML =
+          '<span style="color: #2ed573; background: #e6fce6; padding: 3px 8px; border-radius: 10px; font-size: 11px;">✅ Concluído</span>';
+        break;
+      case "cancelado":
+        statusHTML =
+          '<span style="color: #ff4757; background: #ffe6e6; padding: 3px 8px; border-radius: 10px; font-size: 11px;">❌ Cancelado</span>';
+        break;
+    }
+
+    const tipoTexto = pedido.tipo === "entrada" ? "📥 Entrada" : "📤 Saída";
+
+    tr.innerHTML = `
+      <td><input type="checkbox" class="checkItemPedido" data-id="${pedido.id}"></td>
+      <td>#${pedido.numero}</td>
+      <td>${tipoTexto}</td>
+      <td>${statusHTML}</td>
+      <td>${pedido.clienteFornecedor}</td>
+      <td>${pedido.itens.length} itens</td>
+      <td>R$ ${pedido.valorTotal.toFixed(2)}</td>
+      <td>${pedido.dataCriacao}</td>
+      <td>${pedido.criadoPor}</td>
+      <td><button class="btn-action" onclick="verDetalhesPedido(${pedido.id})">Ver</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Atualizar contador de página
+  document.getElementById("infoPaginaPedidos").textContent = `Página 1 de 1`;
+}
+
+// FUNÇÃO 2: Atualizar renderização da tabela
+function renderizarTabelaPedidos() {
+  aplicarFiltrosPedidos();
+}
+
+// FUNÇÃO 3: Limpar filtros
+function limparFiltrosPedidos() {
+  document.getElementById("selectFiltrarStatus").value = "";
+  document.getElementById("selectFiltrarTipo").value = "";
+  aplicarFiltrosPedidos();
+}
